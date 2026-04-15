@@ -1,1 +1,0 @@
-# noppa-ai
