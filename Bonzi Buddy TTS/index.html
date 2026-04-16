@@ -1,0 +1,22 @@
+<input id="text" placeholder="Kirjoita...">
+<button onclick="speak()">Puhu</button>
+
+<audio id="audio" controls></audio>
+
+<script>
+function speak() {
+  const text = encodeURIComponent(document.getElementById("text").value);
+
+  const voice = "Adult+Male+%232%2C+American+English+(TruVoice)";
+  const pitch = 140;
+  const speed = 157;
+
+  const url =
+    `https://www.tetyys.com/SAPI4/SAPI4?text=${text}` +
+    `&voice=${voice}&pitch=${pitch}&speed=${speed}`;
+
+  const audio = document.getElementById("audio");
+  audio.src = url;
+  audio.play();
+}
+</script>
