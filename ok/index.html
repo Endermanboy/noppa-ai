@@ -1,1 +1,57 @@
-ok heti sanoo
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Viestiseinä</title>
+</head>
+<body>
+
+<h2>Kirjoita viesti</h2>
+
+<input id="msg" placeholder="Kirjoita jotain">
+<button onclick="send()">Lähetä</button>
+
+<h3>Viestit:</h3>
+<ul id="list"></ul>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs } 
+  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.send = async function() {
+    const text = document.getElementById("msg").value;
+
+    await addDoc(collection(db, "messages"), {
+      text: text,
+      time: Date.now()
+    });
+
+    load();
+  }
+
+  async function load() {
+    const snap = await getDocs(collection(db, "messages"));
+    const list = document.getElementById("list");
+    list.innerHTML = "";
+
+    snap.forEach(doc => {
+      const li = document.createElement("li");
+      li.textContent = doc.data().text;
+      list.appendChild(li);
+    });
+  }
+
+  load();
+</script>
+
+</body>
+</html>
