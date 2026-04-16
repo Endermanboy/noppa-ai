@@ -1,48 +1,33 @@
 <!DOCTYPE html>
 <html lang="fi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Desibelimittari</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hauska Kuvakorruptori</title>
 <style>
-body{font-family:Arial,sans-serif;background:#111;color:#fff;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0}
-.card{background:#1e1e1e;padding:24px;border-radius:20px;max-width:420px;width:92%;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.35)}
-.db{font-size:64px;font-weight:bold;margin:10px 0}.bar{height:20px;background:#333;border-radius:999px;overflow:hidden}.fill{height:100%;width:0%;background:linear-gradient(90deg,#22c55e,#eab308,#ef4444)}button{padding:12px 18px;border:0;border-radius:12px;font-size:16px;cursor:pointer}
-small{color:#aaa}
+body{font-family:Arial,sans-serif;background:#111;color:#fff;margin:0;padding:20px;text-align:center}button,input{margin:8px;padding:10px;border-radius:10px;border:0}canvas{max-width:100%;background:#222;border-radius:16px;margin-top:12px}.wrap{max-width:700px;margin:auto}
 </style>
 </head>
-<body>
-<div class='card'>
-<h1>🔊 Desibelimittari</h1>
-<p>Paina käynnistä ja salli mikrofoni.</p>
-<button id='start'>Käynnistä</button>
-<div class='db' id='db'>0 dB</div>
-<div class='bar'><div class='fill' id='fill'></div></div>
-<p id='status'><small>Odottaa...</small></p>
+<body><div class='wrap'>
+<h1>📸 Hauska Kuvakorruptori</h1>
+<p>Ota kuva tai valitse kuva, sitten tee siitä hassu glitch-versio.</p>
+<input type='file' id='file' accept='image/*' capture='user'>
+<br>
+<button id='glitch'>Korruptoi 😆</button>
+<button id='download'>Lataa kuva</button>
+<canvas id='canvas'></canvas>
 </div>
 <script>
-const startBtn=document.getElementById('start');
-startBtn.onclick=async()=>{
- try{
- const stream=await navigator.mediaDevices.getUserMedia({audio:true});
- const ctx=new (window.AudioContext||window.webkitAudioContext)();
- const src=ctx.createMediaStreamSource(stream);
- const analyser=ctx.createAnalyser(); analyser.fftSize=2048; src.connect(analyser);
- const data=new Uint8Array(analyser.fftSize);
- function loop(){
-  analyser.getByteTimeDomainData(data);
-  let sum=0;
-  for(let i=0;i<data.length;i++){let v=(data[i]-128)/128; sum+=v*v;}
-  let rms=Math.sqrt(sum/data.length);
-  let db=Math.max(0, Math.round(20*Math.log10(rms)+90));
-  document.getElementById('db').textContent=db+' dB';
-  document.getElementById('fill').style.width=Math.min(100,db)+'%';
-  document.getElementById('status').innerHTML='<small>Mittaa ääntä...</small>';
-  requestAnimationFrame(loop);
- }
- loop();
- }catch(e){document.getElementById('status').innerHTML='<small>Mikrofonia ei sallittu.</small>';}
+const file=document.getElementById('file'); const canvas=document.getElementById('canvas'); const ctx=canvas.getContext('2d'); let img=new Image();
+file.onchange=e=>{const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>{img.onload=()=>{canvas.width=img.width;canvas.height=img.height;ctx.drawImage(img,0,0)}; img.src=ev.target.result}; r.readAsDataURL(f)};
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+document.getElementById('glitch').onclick=()=>{if(!canvas.width)return; let data=ctx.getImageData(0,0,canvas.width,canvas.height); let d=data.data;
+for(let n=0;n<25;n++){
+ let y=rand(0,canvas.height-20), h=rand(5,30), shift=rand(-60,60);
+ let slice=ctx.getImageData(0,y,canvas.width,h); ctx.putImageData(slice,shift,y);
+}
+for(let i=0;i<d.length;i+=4){ if(Math.random()<0.03){ d[i]=255-d[i]; d[i+1]=255-d[i+1]; } }
+ctx.putImageData(data,0,0);
+ctx.globalAlpha=0.08; for(let i=0;i<100;i++){ctx.fillStyle='white';ctx.fillRect(rand(0,canvas.width),rand(0,canvas.height),2,2)} ctx.globalAlpha=1;
 };
-</script>
-</body>
-</html>
+document.getElementById('download').onclick=()=>{const a=document.createElement('a'); a.href=canvas.toDataURL('image/png'); a.download='hauska-glitch.png'; a.click();};
+</script></body></html>
