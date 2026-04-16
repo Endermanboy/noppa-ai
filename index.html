@@ -4,17 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Noppa</title>
-<link rel="icon" type="image/png" href="icons/ok.png">
+<link rel="icon" type="image/png" href="icons/favicon.png">
 <style>
-body{font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#111;color:#fff;margin:0} .box{text-align:center;background:#222;padding:30px;border-radius:20px;box-shadow:0 0 20px rgba(255,255,255,.1)} button{padding:12px 20px;font-size:18px;border:none;border-radius:12px;cursor:pointer} .dice{font-size:80px;margin:20px}
+html{scroll-behavior:smooth;}body{font-family:Arial,sans-serif;margin:0;background:#111;color:#fff}.section{min-height:100vh;display:flex;justify-content:center;align-items:center;flex-direction:column}.box{text-align:center;background:#222;padding:30px;border-radius:20px;box-shadow:0 0 20px rgba(255,255,255,.1)}button{padding:12px 20px;font-size:18px;border:none;border-radius:12px;cursor:pointer}.dice{font-size:80px;margin:20px}
 </style>
 </head>
 <body>
+<div id="etusivu" class="section">
+<h1>Tervetuloa Noppa Sivulle</h1>
+<p>Avaa valikko vasemmalta ☰</p>
+</div>
+<div id="peli" class="section">
 <div class="box">
 <h1>🎲 Noppa</h1>
 <div class="dice" id="dice">⚀</div>
 <button onclick="rollDice()">Heitä</button>
 <p id="text">Paina nappia!</p>
+</div>
 </div>
 <script>
 const faces=['⚀','⚁','⚂','⚃','⚄','⚅'];
