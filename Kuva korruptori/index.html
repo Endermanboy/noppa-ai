@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hauska Kuvakorruptori</title>
+<style>
+body{font-family:Arial,sans-serif;background:#111;color:#fff;margin:0;padding:20px;text-align:center}button,input{margin:8px;padding:10px;border-radius:10px;border:0}canvas{max-width:100%;background:#222;border-radius:16px;margin-top:12px}.wrap{max-width:700px;margin:auto}
+</style>
+</head>
+<body><div class='wrap'>
+<h1>Kuvakorruptori</h1>
+<p>Ota kuva tai valitse kuva.</p>
+<input type='file' id='file' accept='image/*' capture='user'>
+<br>
+<button id='glitch'>Korruptoi</button>
+<button id='download'>Lataa kuva</button>
+<canvas id='canvas'></canvas>
+</div>
+<script>
+const file=document.getElementById('file'); const canvas=document.getElementById('canvas'); const ctx=canvas.getContext('2d'); let img=new Image();
+file.onchange=e=>{const f=e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=ev=>{img.onload=()=>{canvas.width=img.width;canvas.height=img.height;ctx.drawImage(img,0,0)}; img.src=ev.target.result}; r.readAsDataURL(f)};
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+document.getElementById('glitch').onclick=()=>{if(!canvas.width)return; let data=ctx.getImageData(0,0,canvas.width,canvas.height); let d=data.data;
+for(let n=0;n<25;n++){
+ let y=rand(0,canvas.height-20), h=rand(5,30), shift=rand(-60,60);
+ let slice=ctx.getImageData(0,y,canvas.width,h); ctx.putImageData(slice,shift,y);
+}
+for(let i=0;i<d.length;i+=4){ if(Math.random()<0.03){ d[i]=255-d[i]; d[i+1]=255-d[i+1]; } }
+ctx.putImageData(data,0,0);
+ctx.globalAlpha=0.08; for(let i=0;i<100;i++){ctx.fillStyle='white';ctx.fillRect(rand(0,canvas.width),rand(0,canvas.height),2,2)} ctx.globalAlpha=1;
+};
+document.getElementById('download').onclick=()=>{const a=document.createElement('a'); a.href=canvas.toDataURL('image/png'); a.download='hauska-glitch.png'; a.click();};
+</script></body></html>
