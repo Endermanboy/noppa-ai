@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     <div id="sideMenu" style="position:fixed;left:-220px;top:0;width:220px;height:100%;background:#1a1a1a;color:white;padding:20px;transition:0.3s;z-index:999;">
       <h2>Valikko</h2>
       <a href="https://endermanboy.github.io/noppa-ai">
-  <button>Noplpa</button>
+  <button>Nopppa</button>
 </a>
       <p><a href="ninja/">Äänenvoimakkuuden laskin</a></p>
     </div>`;
