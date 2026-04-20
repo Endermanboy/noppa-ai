@@ -5,7 +5,9 @@ document.addEventListener('DOMContentLoaded',()=>{
     <div id="sideMenu" style="position:fixed;left:-220px;top:0;width:220px;height:100%;background:#1a1a1a;color:white;padding:20px;transition:0.3s;z-index:999;">
       <h2>Valikko</h2>
       <p><a href="ok/">Testi</a></p>
-      <p><a href="Kuva korruptori/">Kuva korruptori</a></p>
+     <a href="https://endermanboy.github.io/noppa-ai/Kuva%20korruptori/">
+  <button>Kuva korruptori</button>
+</a>
     </div>`;
   document.body.appendChild(menu);
   const btn=document.getElementById('openMenu');
