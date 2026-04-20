@@ -8,6 +8,9 @@ document.addEventListener('DOMContentLoaded',()=>{
      <a href="https://endermanboy.github.io/noppa-ai/Kuva%20korruptori/">
   <button>Kuva korruptori</button>
 </a>
+<a href="https://endermanboy.github.io/noppa-ai/Bonzi%20Buddy%20TTS/">
+  <button>Bonzi Buddy TTS</button>
+</a>
     </div>`;
   document.body.appendChild(menu);
   const btn=document.getElementById('openMenu');
