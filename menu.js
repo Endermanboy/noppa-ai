@@ -12,6 +12,10 @@ document.addEventListener('DOMContentLoaded',()=>{
 <a href="https://endermanboy.github.io/noppa-ai/Bonzi%20Buddy%20TTS/">
   <button style="margin-bottom:10px;">Bonzi Buddy TTS</button>
 </a>
+
+<a href="https://endermanboy.github.io/noppa-ai/Desibelimittari/">
+  <button style="margin-bottom:10px;">Desibelimittari</button>
+</a>
     </div>`;
   document.body.appendChild(menu);
   const btn=document.getElementById('openMenu');
