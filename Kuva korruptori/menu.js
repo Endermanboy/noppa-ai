@@ -7,7 +7,9 @@ document.addEventListener('DOMContentLoaded',()=>{
       <a href="https://endermanboy.github.io/noppa-ai">
   <button>Nopppa</button>
 </a>
-      <p><a href="ninja/">Äänenvoimakkuuden laskin</a></p>
+     <a href="https://endermanboy.github.io/noppa-ai/Desibelimittari">
+  <button>Desibelimittari</button>
+</a>
     </div>`;
   document.body.appendChild(menu);
   const btn=document.getElementById('openMenu');
