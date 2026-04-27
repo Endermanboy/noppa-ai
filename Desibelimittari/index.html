@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Desibelimittari</title>
+<style>
+body{font-family:Arial,sans-serif;background:#111;color:#fff;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0}
+.card{background:#1e1e1e;padding:24px;border-radius:20px;max-width:420px;width:92%;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.db{font-size:64px;font-weight:bold;margin:10px 0}.bar{height:20px;background:#333;border-radius:999px;overflow:hidden}.fill{height:100%;width:0%;background:linear-gradient(90deg,#22c55e,#eab308,#ef4444)}button{padding:12px 18px;border:0;border-radius:12px;font-size:16px;cursor:pointer}
+small{color:#aaa}
+</style>
+</head>
+<body>
+<div class='card'>
+<h1>🔊 Desibelimittari</h1>
+<p>Paina käynnistä ja salli mikrofoni.</p>
+<button id='start'>Käynnistä</button>
+<div class='db' id='db'>0 dB</div>
+<div class='bar'><div class='fill' id='fill'></div></div>
+<p id='status'><small>Odottaa...</small></p>
+</div>
+<script>
+const startBtn=document.getElementById('start');
+startBtn.onclick=async()=>{
+ try{
+ const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+ const ctx=new (window.AudioContext||window.webkitAudioContext)();
+ const src=ctx.createMediaStreamSource(stream);
+ const analyser=ctx.createAnalyser(); analyser.fftSize=2048; src.connect(analyser);
+ const data=new Uint8Array(analyser.fftSize);
+ function loop(){
+  analyser.getByteTimeDomainData(data);
+  let sum=0;
+  for(let i=0;i<data.length;i++){let v=(data[i]-128)/128; sum+=v*v;}
+  let rms=Math.sqrt(sum/data.length);
+  let db=Math.max(0, Math.round(20*Math.log10(rms)+90));
+  document.getElementById('db').textContent=db+' dB';
+  document.getElementById('fill').style.width=Math.min(100,db)+'%';
+  document.getElementById('status').innerHTML='<small>Mittaa ääntä...</small>';
+  requestAnimationFrame(loop);
+ }
+ loop();
+ }catch(e){document.getElementById('status').innerHTML='<small>Mikrofonia ei sallittu.</small>';}
+};
+</script>
+</body>
+</html>
