@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded',()=>{
       <a href="https://endermanboy.github.io/noppa-ai">
   <button>Nopppa</button>
 </a>
+
      <a href="https://endermanboy.github.io/noppa-ai/Desibelimittari">
   <button>Desibelimittari</button>
 </a>
