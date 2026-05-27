@@ -15,6 +15,11 @@ document.addEventListener('DOMContentLoaded',()=>{
 <a href="https://endermanboy.github.io/noppa-ai/Desibelimittari/">
   <button style="margin-bottom:10px;">Desibelimittari</button>
 </a>
+
+<a href="https://endermanboy.github.io/noppa-ai/slot%20machine/">
+<button style="margin-bottom:10px;">Lets go gambling</button>
+</a>
+
     </div>`;
   document.body.appendChild(menu);
   const btn=document.getElementById('openMenu');
