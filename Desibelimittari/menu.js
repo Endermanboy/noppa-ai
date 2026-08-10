@@ -12,10 +12,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   <button style="margin-bottom:10px;">Bonzi Buddy TTS</button>
 </a>
 
-<a href="https://endermanboy.github.io/noppa-ai/Desibelimittari/">
-  <button style="margin-bottom:10px;">Desibelimittari</button>
-</a>
-
 <a href="https://endermanboy.github.io/noppa-ai/slot%20machine/">
 <button style="margin-bottom:10px;">Lets go gambling</button>
 </a>
