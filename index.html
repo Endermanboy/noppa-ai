@@ -1,85 +1,25 @@
 <!DOCTYPE html>
 <html lang="fi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3D Noppa</title>
-  <style>
-    body {
-      margin: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background: #111;
-      color: white;
-      font-family: Arial, sans-serif;
-      flex-direction: column;
-    }
-
-    #viewer {
-      width: 300px;
-      height: 300px;
-    }
-
-    button {
-      margin-top: 20px;
-      padding: 12px 20px;
-      font-size: 18px;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Noppa</title>
+<link rel="icon" type="image/png" href="icons/ok.png">
+<style>
+body{font-family:Arial,sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;background:#111;color:#fff;margin:0} .box{text-align:center;background:#222;padding:30px;border-radius:20px;box-shadow:0 0 20px rgba(255,255,255,.1)} button{padding:12px 20px;font-size:18px;border:none;border-radius:12px;cursor:pointer} .dice{font-size:80px;margin:20px}
+</style>
 </head>
 <body>
-
-<div id="viewer"></div>
+<div class="box">
+<h1>🎲 Noppa</h1>
+<div class="dice" id="dice">⚀</div>
 <button onclick="rollDice()">Heitä</button>
 <p id="text">Paina nappia!</p>
-
-<script type="module">
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js";
-import { OBJLoader } from "https://cdn.jsdelivr.net/npm/three@0.160/examples/jsm/loaders/OBJLoader.js";
-
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-camera.position.set(0, 0, 4);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-renderer.setSize(300, 300);
-document.getElementById("viewer").appendChild(renderer.domElement);
-
-const light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(3, 3, 3);
-scene.add(light);
-
-scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-
-let dice;
-
-const loader = new OBJLoader();
-loader.load("models/dice.obj", (obj) => {
-  dice = obj;
-  scene.add(dice);
-});
-
-function animate() {
-  requestAnimationFrame(animate);
-  renderer.render(scene, camera);
-}
-animate();
-
-window.rollDice = function () {
-  const n = Math.floor(Math.random() * 6) + 1;
-  document.getElementById("text").textContent = "Sait numeron " + n + "!";
-
-  if (dice) {
-    dice.rotation.x += Math.PI * 2;
-    dice.rotation.y += Math.PI * 2;
-  }
-};
+</div>
+<script>
+const faces=['⚀','⚁','⚂','⚃','⚄','⚅'];
+function rollDice(){const n=Math.floor(Math.random()*6);document.getElementById('dice').textContent=faces[n];document.getElementById('text').textContent='Sait numeron '+(n+1)+'!';}
 </script>
-
+<script src="menu.js"></script>
 </body>
 </html>
