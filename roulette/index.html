@@ -3,140 +3,347 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Roulette</title>
 
 <style>
+
 * {
     box-sizing: border-box;
 }
 
-body {
+html, body {
     margin: 0;
+    padding: 0;
+    min-height: 100%;
+}
+
+body {
     min-height: 100vh;
+
     background:
-        radial-gradient(circle at center, #164b2c 0%, #082015 70%);
+        radial-gradient(
+            circle at 50% 40%,
+            #14502f 0%,
+            #082619 55%,
+            #03140d 100%
+        );
+
     color: white;
     font-family: Arial, sans-serif;
+
     display: flex;
     justify-content: center;
     align-items: center;
+
+    overflow-x: hidden;
 }
 
 .game {
-    text-align: center;
     width: 95%;
     max-width: 700px;
+    text-align: center;
+
+    padding: 20px 0 35px;
 }
 
 h1 {
+    margin: 0 0 20px;
+
     font-family: Georgia, serif;
-    font-size: 48px;
-    margin: 10px;
-    text-shadow: 0 3px 5px black;
+    font-size: clamp(42px, 10vw, 70px);
+
+    letter-spacing: 2px;
+
+    color: white;
+
+    text-shadow:
+        0 4px 0 #222,
+        0 6px 10px black;
 }
+
+/* =========================
+   RULETTE
+========================= */
 
 .wheel-wrap {
+
     position: relative;
-    width: min(620px, 90vw);
+
+    width: min(620px, 94vw);
     aspect-ratio: 1;
-    margin: 20px auto;
-}
 
-.wheel {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 18px solid #111;
-    box-shadow:
-        0 0 0 8px #c99b45,
-        0 15px 40px black;
-    transition: transform 6s cubic-bezier(.12,.7,.15,1);
-}
+    margin: 10px auto 25px;
 
-.ball {
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    background: white;
-    border-radius: 50%;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    box-shadow: 0 2px 8px black;
-    z-index: 5;
-}
-
-.pointer {
-    position: absolute;
-    top: -5px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 0;
-    height: 0;
-    border-left: 17px solid transparent;
-    border-right: 17px solid transparent;
-    border-top: 35px solid #d6b35a;
-    z-index: 10;
-    filter: drop-shadow(0 2px 3px black);
-}
-
-button {
-    border: none;
-    border-radius: 10px;
-    padding: 15px 45px;
-    font-size: 22px;
-    font-weight: bold;
-    background: #c99b45;
-    color: #17110a;
-    cursor: pointer;
-    box-shadow: 0 4px 10px black;
-}
-
-button:hover {
-    filter: brightness(1.15);
-}
-
-button:disabled {
-    opacity: .5;
-    cursor: not-allowed;
-}
-
-.result {
-    margin-top: 18px;
-    min-height: 65px;
-}
-
-.number {
-    font-size: 42px;
-    font-weight: bold;
-}
-
-.color {
-    font-size: 18px;
-}
-
-.history {
-    margin: 20px auto;
-    display: flex;
-    justify-content: center;
-    gap: 7px;
-    flex-wrap: wrap;
-    max-width: 600px;
-}
-
-.history span {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+/* Outer gold ring */
+
+.wheel-wrap::before {
+
+    content: "";
+
+    position: absolute;
+
+    width: 96%;
+    height: 96%;
+
+    border-radius: 50%;
+
+    border: 9px solid #c9993e;
+
+    box-shadow:
+        0 0 0 8px #171717,
+        0 0 0 13px #c9993e,
+        0 15px 35px rgba(0,0,0,.8);
+
+    pointer-events: none;
+}
+
+/* Wheel */
+
+#wheel {
+
+    width: 86%;
+    height: 86%;
+
+    border-radius: 50%;
+
+    position: relative;
+    z-index: 2;
+
+    transition: none;
+
+    box-shadow:
+        inset 0 0 20px rgba(0,0,0,.8);
+}
+
+/* Pointer */
+
+.pointer {
+
+    position: absolute;
+
+    top: 1.5%;
+    left: 50%;
+
+    transform: translateX(-50%);
+
+    width: 0;
+    height: 0;
+
+    border-left: 20px solid transparent;
+    border-right: 20px solid transparent;
+    border-top: 42px solid #e5b74f;
+
+    z-index: 20;
+
+    filter:
+        drop-shadow(0 3px 2px black)
+        drop-shadow(0 0 4px rgba(255,215,100,.5));
+}
+
+/* Ball track */
+
+.ball-track {
+
+    position: absolute;
+
+    width: 90%;
+    height: 90%;
+
+    left: 5%;
+    top: 5%;
+
+    border-radius: 50%;
+
+    z-index: 10;
+
+    pointer-events: none;
+}
+
+/* Ball */
+
+.ball {
+
+    position: absolute;
+
+    width: 19px;
+    height: 19px;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle at 35% 30%,
+            white 0%,
+            #eeeeee 45%,
+            #aaa 100%
+        );
+
+    box-shadow:
+        0 2px 4px black,
+        0 0 5px rgba(255,255,255,.8);
+
+    transform:
+        translate(-50%, -50%);
+
+    left: 50%;
+    top: 50%;
+}
+
+/* =========================
+   BUTTON
+========================= */
+
+#spin {
+
+    border: none;
+
+    padding: 17px 65px;
+
+    border-radius: 13px;
+
+    background:
+        linear-gradient(
+            #f5c45d,
+            #dca63f
+        );
+
+    color: #17120a;
+
+    font-size: 24px;
     font-weight: bold;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 5px 0 #8c6424,
+        0 8px 15px rgba(0,0,0,.5);
+
+    transition:
+        transform .15s,
+        filter .15s;
+}
+
+#spin:hover {
+
+    filter: brightness(1.1);
+
+    transform: translateY(-2px);
+}
+
+#spin:active {
+
+    transform: translateY(3px);
+
+    box-shadow:
+        0 2px 0 #8c6424,
+        0 4px 8px rgba(0,0,0,.5);
+}
+
+#spin:disabled {
+
+    opacity: .55;
+
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+/* =========================
+   RESULT
+========================= */
+
+.result {
+
+    margin-top: 25px;
+
+    min-height: 90px;
+}
+
+.number {
+
+    font-size: 56px;
+
+    line-height: 1;
+
+    font-weight: bold;
+
+    text-shadow:
+        0 3px 5px black;
+}
+
+.color {
+
+    margin-top: 5px;
+
+    font-size: 22px;
+
+    font-weight: bold;
+
+    letter-spacing: 2px;
+}
+
+/* =========================
+   HISTORY
+========================= */
+
+.history-title {
+
+    margin-top: 18px;
+
+    color: #d8d8d8;
+
+    font-size: 14px;
+
+    text-transform: uppercase;
+
+    letter-spacing: 2px;
+}
+
+.history {
+
+    margin: 10px auto 20px;
+
+    min-height: 42px;
+
+    max-width: 600px;
+
+    display: flex;
+
+    justify-content: center;
+
+    flex-wrap: wrap;
+
+    gap: 7px;
+}
+
+.history span {
+
+    width: 38px;
+    height: 38px;
+
+    border-radius: 50%;
+
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    font-weight: bold;
+
     border: 2px solid white;
+
+    box-shadow:
+        0 2px 5px black;
 }
 
 .red {
-    background: #c62828;
+    background: #bd2028;
 }
 
 .black {
@@ -144,13 +351,51 @@ button:disabled {
 }
 
 .green {
-    background: #168044;
+    background: #08783e;
 }
 
 .info {
-    color: #ccc;
+
+    color: #aaa;
+
     font-size: 14px;
+
+    margin-top: 10px;
 }
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 500px) {
+
+    .game {
+        padding-top: 12px;
+    }
+
+    h1 {
+        margin-bottom: 10px;
+    }
+
+    .wheel-wrap {
+        margin-bottom: 20px;
+    }
+
+    #spin {
+        padding: 15px 55px;
+        font-size: 21px;
+    }
+
+    .number {
+        font-size: 50px;
+    }
+
+    .ball {
+        width: 16px;
+        height: 16px;
+    }
+}
+
 </style>
 </head>
 
@@ -161,21 +406,49 @@ button:disabled {
     <h1>🎰 ROULETTE</h1>
 
     <div class="wheel-wrap">
+
         <div class="pointer"></div>
 
-        <canvas id="wheel" class="wheel" width="620" height="620"></canvas>
+        <canvas
+            id="wheel"
+            width="620"
+            height="620">
+        </canvas>
 
-        <div class="ball"></div>
+        <div class="ball-track">
+            <div class="ball" id="ball"></div>
+        </div>
+
     </div>
 
-    <button id="spin">SPIN</button>
+    <button id="spin">
+        SPIN
+    </button>
 
     <div class="result">
-        <div class="number" id="number">—</div>
-        <div class="color" id="color">Spin the wheel</div>
+
+        <div
+            class="number"
+            id="number">
+            —
+        </div>
+
+        <div
+            class="color"
+            id="color">
+            Spin the wheel
+        </div>
+
     </div>
 
-    <div class="history" id="history"></div>
+    <div class="history-title">
+        Previous results
+    </div>
+
+    <div
+        class="history"
+        id="history">
+    </div>
 
     <div class="info">
         European roulette • 0–36
@@ -183,171 +456,753 @@ button:disabled {
 
 </div>
 
-<script>
-const canvas = document.getElementById("wheel");
-const ctx = canvas.getContext("2d");
 
-const spinButton = document.getElementById("spin");
-const numberText = document.getElementById("number");
-const colorText = document.getElementById("color");
-const history = document.getElementById("history");
+<script>
+
+/* =====================================
+   ELEMENTS
+===================================== */
+
+const canvas =
+    document.getElementById("wheel");
+
+const ctx =
+    canvas.getContext("2d");
+
+const spinButton =
+    document.getElementById("spin");
+
+const numberText =
+    document.getElementById("number");
+
+const colorText =
+    document.getElementById("color");
+
+const history =
+    document.getElementById("history");
+
+const ball =
+    document.getElementById("ball");
+
+
+/* =====================================
+   EUROPEAN ROULETTE ORDER
+===================================== */
 
 const numbers = [
-    0, 32, 15, 19, 4, 21, 2, 25, 17, 34,
-    6, 27, 13, 36, 11, 30, 8, 23, 10, 5,
-    24, 16, 33, 1, 20, 14, 31, 9, 22, 18,
-    29, 7, 28, 12, 35, 3, 26
+
+    0, 32, 15, 19, 4, 21, 2,
+    25, 17, 34, 6, 27, 13,
+    36, 11, 30, 8, 23, 10,
+    5, 24, 16, 33, 1, 20,
+    14, 31, 9, 22, 18,
+    29, 7, 28, 12, 35,
+    3, 26
+
 ];
+
+
+/* =====================================
+   RED NUMBERS
+===================================== */
 
 const redNumbers = [
-    1,3,5,7,9,12,14,16,18,
-    19,21,23,25,27,30,32,34,36
+
+    1, 3, 5, 7, 9,
+    12, 14, 16, 18,
+    19, 21, 23, 25,
+    27, 30, 32, 34, 36
+
 ];
 
-let rotation = 0;
+
+/* =====================================
+   STATE
+===================================== */
+
+let wheelRotation = 0;
+
 let spinning = false;
 
+
+/* =====================================
+   GET COLOR
+===================================== */
+
 function getColor(number) {
-    if (number === 0) return "green";
-    return redNumbers.includes(number) ? "red" : "black";
+
+    if (number === 0) {
+
+        return "green";
+
+    }
+
+    if (redNumbers.includes(number)) {
+
+        return "red";
+
+    }
+
+    return "black";
 }
 
-function drawWheel() {
-    const cx = canvas.width / 2;
-    const cy = canvas.height / 2;
-    const radius = 290;
-    const slice = Math.PI * 2 / numbers.length;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+/* =====================================
+   DRAW WHEEL
+===================================== */
+
+function drawWheel() {
+
+    const cx =
+        canvas.width / 2;
+
+    const cy =
+        canvas.height / 2;
+
+    const radius = 290;
+
+    const slice =
+        Math.PI * 2 / numbers.length;
+
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+
+    /* Outer gold */
 
     ctx.beginPath();
-    ctx.arc(cx, cy, radius + 15, 0, Math.PI * 2);
-    ctx.fillStyle = "#c99b45";
+
+    ctx.arc(
+        cx,
+        cy,
+        radius + 15,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle = "#c9993e";
+
     ctx.fill();
 
-    for (let i = 0; i < numbers.length; i++) {
-        const start = -Math.PI / 2 + i * slice;
-        const end = start + slice;
 
-        const color = getColor(numbers[i]);
+    /* Number sections */
+
+    for (
+        let i = 0;
+        i < numbers.length;
+        i++
+    ) {
+
+        /*
+         * IMPORTANT:
+         *
+         * The first number starts at the top.
+         * Each number is centered inside its section.
+         */
+
+        const start =
+            -Math.PI / 2 +
+            i * slice;
+
+        const end =
+            start + slice;
+
+
+        const number =
+            numbers[i];
+
+        const color =
+            getColor(number);
+
+
+        /* Section */
 
         ctx.beginPath();
+
         ctx.moveTo(cx, cy);
-        ctx.arc(cx, cy, radius, start, end);
+
+        ctx.arc(
+            cx,
+            cy,
+            radius,
+            start,
+            end
+        );
+
         ctx.closePath();
 
-        ctx.fillStyle =
-            color === "red" ? "#b51f25" :
-            color === "black" ? "#101010" :
-            "#08783e";
+
+        if (color === "red") {
+
+            ctx.fillStyle = "#b82028";
+
+        }
+        else if (color === "black") {
+
+            ctx.fillStyle = "#111111";
+
+        }
+        else {
+
+            ctx.fillStyle = "#08783e";
+
+        }
 
         ctx.fill();
 
-        ctx.strokeStyle = "#d6b35a";
+
+        /* Section border */
+
+        ctx.strokeStyle =
+            "#d6b35a";
+
         ctx.lineWidth = 2;
+
         ctx.stroke();
 
+
+        /* Number */
+
         ctx.save();
-        ctx.translate(cx, cy);
-        ctx.rotate(start + slice / 2);
 
-        ctx.fillStyle = "white";
-        ctx.font = "bold 23px Georgia";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
+        ctx.translate(
+            cx,
+            cy
+        );
 
-        ctx.fillText(numbers[i], radius - 42, 0);
+        ctx.rotate(
+            start + slice / 2
+        );
+
+
+        ctx.fillStyle =
+            "white";
+
+        ctx.font =
+            "bold 23px Georgia";
+
+        ctx.textAlign =
+            "center";
+
+        ctx.textBaseline =
+            "middle";
+
+        ctx.shadowColor =
+            "black";
+
+        ctx.shadowBlur =
+            3;
+
+
+        ctx.fillText(
+            number,
+            radius - 43,
+            0
+        );
+
 
         ctx.restore();
+
     }
 
+
+    /* Center */
+
     ctx.beginPath();
-    ctx.arc(cx, cy, 55, 0, Math.PI * 2);
-    ctx.fillStyle = "#111";
+
+    ctx.arc(
+        cx,
+        cy,
+        57,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle =
+        "#111";
+
     ctx.fill();
 
+
     ctx.beginPath();
-    ctx.arc(cx, cy, 42, 0, Math.PI * 2);
-    ctx.strokeStyle = "#c99b45";
+
+    ctx.arc(
+        cx,
+        cy,
+        43,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.strokeStyle =
+        "#c9993e";
+
     ctx.lineWidth = 5;
+
     ctx.stroke();
+
+
+    /* Center white circle */
+
+    ctx.beginPath();
+
+    ctx.arc(
+        cx,
+        cy,
+        15,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fillStyle =
+        "white";
+
+    ctx.fill();
+
 }
+
+
+/* =====================================
+   BALL POSITION
+===================================== */
+
+function setBallPosition(angle) {
+
+    /*
+     * The ball moves around the outside
+     * of the wheel.
+     */
+
+    const track =
+        document.querySelector(".ball-track");
+
+    const rect =
+        track.getBoundingClientRect();
+
+    /*
+     * Radius in percentage of track.
+     */
+
+    const radius =
+        rect.width * 0.45;
+
+
+    const centerX =
+        rect.width / 2;
+
+    const centerY =
+        rect.height / 2;
+
+
+    const x =
+        centerX +
+        Math.cos(angle) * radius;
+
+    const y =
+        centerY +
+        Math.sin(angle) * radius;
+
+
+    ball.style.left =
+        x + "px";
+
+    ball.style.top =
+        y + "px";
+}
+
+
+/* =====================================
+   EASING
+===================================== */
+
+function easeOut(t) {
+
+    return 1 -
+        Math.pow(
+            1 - t,
+            4
+        );
+
+}
+
+
+/* =====================================
+   SPIN
+===================================== */
 
 function spin() {
-    if (spinning) return;
+
+    if (spinning) {
+        return;
+    }
+
 
     spinning = true;
-    spinButton.disabled = true;
 
-    numberText.textContent = "…";
-    colorText.textContent = "Spinning...";
+    spinButton.disabled =
+        true;
 
-    const slice = 360 / numbers.length;
 
-    // Satunnainen pysähtymiskohta
+    numberText.textContent =
+        "…";
+
+    colorText.textContent =
+        "Spinning...";
+
+    numberText.style.color =
+        "white";
+
+
+    /*
+     * Pick ONE winning index.
+     *
+     * This exact index will also be
+     * the number under the pointer.
+     */
+
     const winningIndex =
-        Math.floor(Math.random() * numbers.length);
+        Math.floor(
+            Math.random() *
+            numbers.length
+        );
 
-    // Kiekko pyörii oikealle
+
+    const sliceDegrees =
+        360 / numbers.length;
+
+
+    /*
+     * The center of the selected section.
+     */
+
+    const desiredRotation =
+        -(winningIndex + 0.5) *
+        sliceDegrees;
+
+
+    /*
+     * Current rotation.
+     */
+
+    const currentRotation =
+        wheelRotation;
+
+
+    /*
+     * Find clockwise distance to
+     * selected number.
+     */
+
+    let difference =
+        desiredRotation -
+        currentRotation;
+
+
+    difference =
+        ((difference % 360) + 360) % 360;
+
+
+    /*
+     * 5–8 complete spins.
+     */
+
     const extraSpins =
-        5 + Math.floor(Math.random() * 4);
+        5 +
+        Math.floor(
+            Math.random() * 4
+        );
 
-    const targetDegrees =
-        rotation * 180 / Math.PI +
-        extraSpins * 360 -
-        winningIndex * slice;
 
-    rotation = targetDegrees * Math.PI / 180;
+    const targetRotation =
+        currentRotation +
+        extraSpins * 360 +
+        difference;
 
-    canvas.style.transform =
-        `rotate(${rotation}rad)`;
 
-    setTimeout(() => {
+    /*
+     * Ball starts at the top.
+     */
 
-        // Tämä on sama numero, joka oikeasti
-        // asetettiin osoittimen kohdalle.
-        const number = numbers[winningIndex];
-        const color = getColor(number);
+    const ballStart =
+        -Math.PI / 2;
 
-        numberText.textContent = number;
 
-        if (color === "red") {
-            colorText.textContent = "RED";
-            numberText.style.color = "#ff5555";
+    /*
+     * Ball makes many complete
+     * clockwise revolutions.
+     */
+
+    const ballTurns =
+        7 +
+        Math.random() * 3;
+
+
+    /*
+     * Animation time.
+     */
+
+    const duration =
+        6000;
+
+
+    const startTime =
+        performance.now();
+
+
+    function animate(time) {
+
+        const elapsed =
+            time - startTime;
+
+
+        let progress =
+            elapsed / duration;
+
+
+        if (progress > 1) {
+            progress = 1;
         }
-        else if (color === "black") {
-            colorText.textContent = "BLACK";
-            numberText.style.color = "#ddd";
+
+
+        const eased =
+            easeOut(progress);
+
+
+        /* =========================
+           WHEEL
+        ========================= */
+
+        wheelRotation =
+            currentRotation +
+            (targetRotation -
+             currentRotation) *
+            eased;
+
+
+        canvas.style.transform =
+            `rotate(${wheelRotation}deg)`;
+
+
+        /* =========================
+           BALL
+        ========================= */
+
+        /*
+         * Ball spins clockwise first,
+         * then slows down.
+         */
+
+        const remainingTurns =
+            ballTurns *
+            (1 - eased);
+
+
+        /*
+         * Small bounce near the end.
+         */
+
+        const bounce =
+            Math.sin(
+                eased * Math.PI * 10
+            ) *
+            (1 - eased) *
+            0.08;
+
+
+        const ballAngle =
+            ballStart +
+            remainingTurns *
+            Math.PI * 2 +
+            bounce;
+
+
+        setBallPosition(
+            ballAngle
+        );
+
+
+        if (progress < 1) {
+
+            requestAnimationFrame(
+                animate
+            );
+
         }
         else {
-            colorText.textContent = "GREEN";
-            numberText.style.color = "#42d67a";
+
+            /* =========================
+               FINAL POSITION
+            ========================= */
+
+            wheelRotation =
+                targetRotation;
+
+
+            canvas.style.transform =
+                `rotate(${wheelRotation}deg)`;
+
+
+            /*
+             * Put ball EXACTLY at top.
+             */
+
+            setBallPosition(
+                -Math.PI / 2
+            );
+
+
+            /*
+             * Get the result from the
+             * SAME winningIndex that was
+             * used to position the wheel.
+             */
+
+            const winningNumber =
+                numbers[winningIndex];
+
+
+            const winningColor =
+                getColor(
+                    winningNumber
+                );
+
+
+            /* =========================
+               SHOW RESULT
+            ========================= */
+
+            numberText.textContent =
+                winningNumber;
+
+
+            if (
+                winningColor ===
+                "red"
+            ) {
+
+                colorText.textContent =
+                    "RED";
+
+                numberText.style.color =
+                    "#ff5555";
+
+            }
+            else if (
+                winningColor ===
+                "black"
+            ) {
+
+                colorText.textContent =
+                    "BLACK";
+
+                numberText.style.color =
+                    "#eeeeee";
+
+            }
+            else {
+
+                colorText.textContent =
+                    "GREEN";
+
+                numberText.style.color =
+                    "#42d67a";
+
+            }
+
+
+            addHistory(
+                winningNumber,
+                winningColor
+            );
+
+
+            spinning = false;
+
+            spinButton.disabled =
+                false;
+
         }
 
-        addHistory(number, color);
-
-        spinButton.disabled = false;
-        spinning = false;
-
-    }, 6100);
-}
-
-function addHistory(number, color) {
-    const item = document.createElement("span");
-
-    item.textContent = number;
-    item.className = color;
-
-    history.prepend(item);
-
-    while (history.children.length > 15) {
-        history.removeChild(history.lastChild);
     }
+
+
+    requestAnimationFrame(
+        animate
+    );
+
 }
 
-spinButton.addEventListener("click", spin);
+
+/* =====================================
+   HISTORY
+===================================== */
+
+function addHistory(
+    number,
+    color
+) {
+
+    const item =
+        document.createElement(
+            "span"
+        );
+
+
+    item.textContent =
+        number;
+
+    item.className =
+        color;
+
+
+    history.prepend(
+        item
+    );
+
+
+    /*
+     * Keep last 15.
+     */
+
+    while (
+        history.children.length >
+        15
+    ) {
+
+        history.removeChild(
+            history.lastChild
+        );
+
+    }
+
+}
+
+
+/* =====================================
+   EVENTS
+===================================== */
+
+spinButton.addEventListener(
+    "click",
+    spin
+);
+
+
+/* =====================================
+   INITIALIZE
+===================================== */
 
 drawWheel();
+
+setBallPosition(
+    -Math.PI / 2
+);
+
 </script>
 
 </body>
