@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Muistipeli 10×10</title>
+<title>🧠 Muistipeli</title>
 
 <style>
 * {
@@ -19,39 +19,79 @@ body {
     color: white;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    padding: 20px 0;
 }
 
 .game {
-    width: min(96vw, 900px);
+    width: 96vw;
+    max-width: 1200px;
     text-align: center;
-    padding: 15px;
 }
 
 h1 {
-    margin: 5px 0 10px;
+    margin: 5px 0 15px;
     font-size: clamp(28px, 5vw, 45px);
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+select,
+button {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 9px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+select {
+    background: white;
+    color: #222;
+}
+
+button {
+    background: white;
+    color: #333;
+}
+
+button:hover {
+    transform: scale(1.05);
 }
 
 .info {
     display: flex;
     justify-content: center;
-    gap: 35px;
-    font-size: 18px;
-    margin-bottom: 12px;
+    gap: 25px;
+    flex-wrap: wrap;
+    font-size: 17px;
+    margin-bottom: 15px;
 }
+
+/* Pelilauta */
 
 .board {
     display: grid;
-    grid-template-columns: repeat(10, 1fr);
-    gap: 5px;
     width: 100%;
+    gap: 5px;
+    margin: auto;
 }
+
+/* Kortit */
 
 .card {
     aspect-ratio: 1;
-    perspective: 700px;
+    perspective: 600px;
     cursor: pointer;
+    min-width: 0;
 }
 
 .card-inner {
@@ -59,7 +99,7 @@ h1 {
     height: 100%;
     position: relative;
     transform-style: preserve-3d;
-    transition: transform 0.35s;
+    transition: transform 0.3s;
 }
 
 .card.flipped .card-inner,
@@ -71,49 +111,83 @@ h1 {
 .back {
     position: absolute;
     inset: 0;
-    border-radius: 7px;
+
     display: flex;
     justify-content: center;
     align-items: center;
+
+    border-radius: 7px;
+
     backface-visibility: hidden;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+
+    box-shadow:
+        0 2px 5px rgba(0, 0, 0, 0.25);
 }
 
 .back {
     background: #222;
-    font-size: clamp(12px, 3vw, 25px);
+    font-size: clamp(10px, 2vw, 30px);
 }
 
 .front {
     background: white;
     color: black;
     transform: rotateY(180deg);
-    font-size: clamp(14px, 3vw, 30px);
+    font-size: clamp(10px, 2vw, 30px);
 }
 
-.matched {
+.card.matched {
+    cursor: default;
     pointer-events: none;
 }
 
-button {
-    border: none;
-    padding: 12px 25px;
-    margin-top: 15px;
-    border-radius: 10px;
-    font-size: 17px;
-    font-weight: bold;
-    cursor: pointer;
+/* Suuret pelit */
+
+.board.large {
+    gap: 2px;
 }
 
-button:hover {
-    transform: scale(1.05);
+.board.large .front,
+.board.large .back {
+    border-radius: 2px;
+    box-shadow: none;
 }
+
+/* Voittoteksti */
 
 #message {
     min-height: 30px;
-    margin-top: 10px;
+    margin-top: 15px;
     font-size: 20px;
     font-weight: bold;
+}
+
+/* Pienellä näytöllä */
+
+@media (max-width: 600px) {
+
+    body {
+        padding: 10px 0;
+    }
+
+    .game {
+        width: 98vw;
+    }
+
+    .board {
+        gap: 3px;
+    }
+
+    .info {
+        gap: 12px;
+        font-size: 14px;
+    }
+
+    select,
+    button {
+        font-size: 14px;
+        padding: 9px 12px;
+    }
 }
 </style>
 </head>
@@ -122,23 +196,52 @@ button:hover {
 
 <div class="game">
 
-    <h1>🧠 Muistipeli 10×10</h1>
+    <h1>🧠 Muistipeli</h1>
+
+    <div class="controls">
+
+        <label for="size">
+            Ruudukko:
+        </label>
+
+        <select id="size"></select>
+
+        <button onclick="startGame()">
+            🔄 Uusi peli
+        </button>
+
+    </div>
 
     <div class="info">
-        <div>⏱️ <span id="time">0</span>s</div>
-        <div>🎯 Siirrot: <span id="moves">0</span></div>
-        <div>✅ Parit: <span id="matches">0</span>/50</div>
+
+        <div>
+            ⏱️ Aika:
+            <span id="time">0</span>s
+        </div>
+
+        <div>
+            🎯 Siirrot:
+            <span id="moves">0</span>
+        </div>
+
+        <div>
+            ✅ Parit:
+            <span id="matches">0</span>/<span id="totalPairs">0</span>
+        </div>
+
     </div>
 
     <div id="board" class="board"></div>
 
     <div id="message"></div>
 
-    <button onclick="startGame()">🔄 Uusi peli</button>
-
 </div>
 
 <script>
+
+/* =========================================
+   SYMBOLIT
+========================================= */
 
 const emojis = [
     "🍎","🍌","🍕","🍔","🚗",
@@ -150,90 +253,342 @@ const emojis = [
     "⚽","🏀","🏈","⚾","🎾",
     "🎮","🎲","🎸","🎹","🎧",
     "🚲","✈️","🚁","🚢","🏠",
-    "💎","🍩","🍪","🍓","🍉"
+    "💎","🍩","🍪","🍓","🍉",
+    "🥝","🥭","🍒","🍇","🍊",
+    "🍋","🥑","🥕","🌽","🍄",
+    "🌳","🌴","🌵","🌲","🌷",
+    "🌹","🌺","🌼","☁️","🌧️",
+    "⛄","🌊","🌋","🏔️","🏝️",
+    "🏰","🗿","🎁","🎈","🎃",
+    "👾","🤖","👽","👻","💩",
+    "👑","💰","🔑","🔒","💡",
+    "📱","💻","⌚","📷","🎥",
+    "🎤","📚","✏️","🖊️","⚡",
+    "❤️","💙","💚","💛","💜",
+    "🧡","🖤","🤍","🤎","😎",
+    "😂","🤣","😊","😍","🤔",
+    "😴","🥳","🤩","😈","👀",
+    "👍","👏","🔥","💯","🎯"
 ];
+
+
+/* =========================================
+   ELEMENTIT
+========================================= */
+
+const sizeSelect =
+    document.getElementById("size");
+
+const board =
+    document.getElementById("board");
+
+const timeText =
+    document.getElementById("time");
+
+const movesText =
+    document.getElementById("moves");
+
+const matchesText =
+    document.getElementById("matches");
+
+const totalPairsText =
+    document.getElementById("totalPairs");
+
+const message =
+    document.getElementById("message");
+
+
+/* =========================================
+   RUUDUKKOVALIKKO
+   2×2 → 100×100
+========================================= */
+
+for (let size = 2; size <= 100; size += 2) {
+
+    const option =
+        document.createElement("option");
+
+    option.value = size;
+
+    option.textContent =
+        `${size} × ${size}`;
+
+    sizeSelect.appendChild(option);
+}
+
+/* Oletuksena 10×10 */
+
+sizeSelect.value = "10";
+
+
+/* =========================================
+   PELIN MUUTTUJAT
+========================================= */
 
 let firstCard = null;
 let secondCard = null;
+
 let locked = false;
 
 let moves = 0;
 let matches = 0;
 let seconds = 0;
+
+let totalPairs = 0;
+
 let timer = null;
 
+
+/* =========================================
+   SEKOITUS
+========================================= */
+
 function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
+
+    for (
+        let i = array.length - 1;
+        i > 0;
+        i--
+    ) {
+
+        const j =
+            Math.floor(
+                Math.random() * (i + 1)
+            );
+
+        [
+            array[i],
+            array[j]
+        ] = [
+            array[j],
+            array[i]
+        ];
     }
 
     return array;
 }
 
+
+/* =========================================
+   LUO TARVITTAVAT SYMBOLIT
+========================================= */
+
+function getSymbols(amount) {
+
+    let symbols = [...emojis];
+
+    /*
+       Jos joskus tarvitaan enemmän
+       symboleita kuin listassa on,
+       käytetään numeroita.
+    */
+
+    let number = 1;
+
+    while (symbols.length < amount) {
+
+        symbols.push(
+            "🔢" + number
+        );
+
+        number++;
+    }
+
+    return symbols.slice(
+        0,
+        amount
+    );
+}
+
+
+/* =========================================
+   UUSI PELI
+========================================= */
+
 function startGame() {
+
+    /* Pysäytä vanha ajanotto */
 
     clearInterval(timer);
 
+    /* Nollaa peli */
+
     firstCard = null;
     secondCard = null;
+
     locked = false;
 
     moves = 0;
     matches = 0;
     seconds = 0;
 
-    document.getElementById("moves").textContent = "0";
-    document.getElementById("matches").textContent = "0";
-    document.getElementById("time").textContent = "0";
-    document.getElementById("message").textContent = "";
+    /* Päivitä näytöt */
 
-    const board = document.getElementById("board");
+    timeText.textContent = "0";
+    movesText.textContent = "0";
+    matchesText.textContent = "0";
+
+    message.textContent = "";
+
+    /* Valittu koko */
+
+    const size =
+        Number(sizeSelect.value);
+
+    /*
+       Esimerkiksi:
+
+       10 × 10 = 100 korttia
+       100 / 2 = 50 paria
+    */
+
+    const totalCards =
+        size * size;
+
+    totalPairs =
+        totalCards / 2;
+
+    totalPairsText.textContent =
+        totalPairs;
+
+
+    /* Tyhjennä vanha lauta */
 
     board.innerHTML = "";
 
-    // Jokaisesta symbolista tehdään kaksi korttia
-    let deck = [...emojis, ...emojis];
+
+    /* Aseta sarakkeiden määrä */
+
+    board.style.gridTemplateColumns =
+        `repeat(${size}, 1fr)`;
+
+
+    /* Suurille laudoille pienempi väli */
+
+    if (size >= 30) {
+
+        board.classList.add("large");
+
+    } else {
+
+        board.classList.remove("large");
+    }
+
+
+    /* Hanki tarvittavat symbolit */
+
+    const symbols =
+        getSymbols(totalPairs);
+
+
+    /*
+       Jokaisesta symbolista
+       tehdään kaksi korttia.
+    */
+
+    let deck = [];
+
+    for (
+        let i = 0;
+        i < totalPairs;
+        i++
+    ) {
+
+        deck.push(symbols[i]);
+        deck.push(symbols[i]);
+    }
+
+
+    /* Sekoita kortit */
 
     shuffle(deck);
 
-    deck.forEach(emoji => {
 
-        const card = document.createElement("div");
+    /* Luo kortit */
+
+    deck.forEach(symbol => {
+
+        const card =
+            document.createElement("div");
 
         card.className = "card";
-        card.dataset.value = emoji;
+
+        card.dataset.value =
+            symbol;
+
 
         card.innerHTML = `
+
             <div class="card-inner">
-                <div class="back">❓</div>
-                <div class="front">${emoji}</div>
+
+                <div class="back">
+                    ❓
+                </div>
+
+                <div class="front">
+                    ${symbol}
+                </div>
+
             </div>
+
         `;
 
-        card.addEventListener("click", flipCard);
+
+        card.addEventListener(
+            "click",
+            flipCard
+        );
+
 
         board.appendChild(card);
+
     });
+
+
+    /* Käynnistä ajanotto */
 
     timer = setInterval(() => {
 
         seconds++;
 
-        document.getElementById("time").textContent = seconds;
+        timeText.textContent =
+            seconds;
 
     }, 1000);
 }
 
+
+/* =========================================
+   KORTIN KÄÄNTÄMINEN
+========================================= */
+
 function flipCard() {
+
+    /* Älä tee mitään jos peli käsittelee pareja */
 
     if (locked) return;
 
+
+    /* Älä klikkaa samaa korttia */
+
     if (this === firstCard) return;
 
-    if (this.classList.contains("matched")) return;
+
+    /* Älä klikkaa löydettyä paria */
+
+    if (
+        this.classList.contains("matched")
+    ) {
+        return;
+    }
+
+
+    /* Käännä kortti */
 
     this.classList.add("flipped");
+
+
+    /* Ensimmäinen kortti */
 
     if (!firstCard) {
 
@@ -242,64 +597,122 @@ function flipCard() {
         return;
     }
 
+
+    /* Toinen kortti */
+
     secondCard = this;
 
     moves++;
 
-    document.getElementById("moves").textContent = moves;
+    movesText.textContent =
+        moves;
+
 
     checkMatch();
 }
 
+
+/* =========================================
+   TARKISTA PARI
+========================================= */
+
 function checkMatch() {
 
     const isMatch =
-        firstCard.dataset.value === secondCard.dataset.value;
+        firstCard.dataset.value ===
+        secondCard.dataset.value;
+
+
+    /* PARI */
 
     if (isMatch) {
 
-        firstCard.classList.add("matched");
-        secondCard.classList.add("matched");
+        firstCard.classList.add(
+            "matched"
+        );
+
+        secondCard.classList.add(
+            "matched"
+        );
+
 
         matches++;
 
-        document.getElementById("matches").textContent = matches;
+        matchesText.textContent =
+            matches;
+
 
         resetTurn();
 
-        if (matches === 50) {
+
+        /* Voitto */
+
+        if (
+            matches >= totalPairs
+        ) {
+
             gameWon();
         }
 
-    } else {
+    }
+
+
+    /* EI PARIA */
+
+    else {
 
         locked = true;
 
+
         setTimeout(() => {
 
-            firstCard.classList.remove("flipped");
-            secondCard.classList.remove("flipped");
+            firstCard.classList.remove(
+                "flipped"
+            );
+
+            secondCard.classList.remove(
+                "flipped"
+            );
+
 
             resetTurn();
 
-        }, 800);
+        }, 700);
     }
 }
+
+
+/* =========================================
+   NOLLAA VUORO
+========================================= */
 
 function resetTurn() {
 
     firstCard = null;
+
     secondCard = null;
+
     locked = false;
 }
+
+
+/* =========================================
+   VOITTO
+========================================= */
 
 function gameWon() {
 
     clearInterval(timer);
 
-    document.getElementById("message").textContent =
+
+    message.textContent =
         `🎉 Voitit! ${seconds} sekuntia ja ${moves} siirtoa!`;
 }
+
+
+/* =========================================
+   ALOITA ENSIMMÄINEN PELI
+========================================= */
 
 startGame();
 
