@@ -1,195 +1,223 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="fi">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>WAV → SFO</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;display:grid;place-items:center;background:#11232c;color:#fff;font:16px Arial,sans-serif}
-main{width:min(460px,92vw);padding:25px;border-radius:18px;background:#23404c}
-input,button{width:100%;margin:12px 0}
-button{padding:14px;background:#8ae6b3;color:#102a22;border:0;border-radius:10px;font-weight:bold}
-button:disabled{opacity:.5}
-#status{white-space:pre-wrap;overflow-wrap:anywhere}
-small{color:#c7d9df}
-</style>
-<script src="./ffmpeg.js"></script>
-</head>
-<body>
-<main>
-<h1>🎣 WAV → SFO</h1>
-<p>Valitse WAV-ääni ja kokeile muuntaa se Pro Pilkki 2:n SFO-muotoon.</p>
-<input type="file" id="file" accept=".wav,audio/wav,audio/x-wav">
-<button id="go">Muunna SFO:ksi</button>
-<p id="status" role="status">Valitse tiedosto.</p>
-<small>FFmpeg-ydin ja suuri WASM-tiedosto ladataan CDN-palvelusta. Niitä ei tarvitse tallentaa GitHubiin. Tämä kokeellinen SFO-muunnos ei takaa yhteensopivuutta pelin kanssa.</small>
-</main>
-<script>
-const el = id => document.getElementById(id);
-let ffmpeg = null;
-let loading = null;
-const objectURLs = [];
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WAV → FSO-muunnin</title>
 
-async function fetchAsBlobURL(url, mime) {
-  const response = await fetch(url, {mode:"cors"});
-  if (!response.ok) {
-    throw new Error("CDN-lataus epäonnistui: " + response.status + " (" + url + ")");
-  }
-  const data = await response.arrayBuffer();
-  const blobURL = URL.createObjectURL(new Blob([data], {type:mime}));
-  objectURLs.push(blobURL);
-  return blobURL;
+<style>
+* {
+  box-sizing: border-box;
 }
 
-async function loadFFmpeg() {
-  if (ffmpeg && ffmpeg.loaded) return ffmpeg;
-  if (loading) return loading;
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #111;
+  color: white;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
 
-  loading = (async () => {
-    if (!window.FFmpegWASM || !window.FFmpegWASM.FFmpeg) {
-      throw new Error("ffmpeg.js ei latautunut. Tarkista, että se on samassa kansiossa kuin index.html.");
-    }
+.container {
+  width: 100%;
+  max-width: 450px;
+  background: #222;
+  padding: 25px;
+  border-radius: 16px;
+  text-align: center;
+}
 
-    // Nämä versiot on tarkoitettu käytettäväksi yhdessä:
-    // @ffmpeg/ffmpeg 0.12.10 ja @ffmpeg/core 0.12.6.
-    const core = "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd";
-    const workerURL = new URL("./814.ffmpeg.js", location.href).href;
+h1 {
+  font-size: 25px;
+}
 
-    el("status").textContent = "Ladataan FFmpeg-ydintä CDN-palvelusta...";
-    // Ydin-JavaScript tulee käyttäjän omasta GitHub Pages -kansiosta.
-    // Vain suuri WASM-tiedosto haetaan CDN-palvelusta.
-    const coreURL = new URL("./ffmpeg-core.js", location.href).href;
+input, select, button {
+  width: 100%;
+  padding: 13px;
+  margin-top: 15px;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+}
 
-    el("status").textContent = "Ladataan suurta WASM-tiedostoa CDN-palvelusta...";
-    const wasmURL = await fetchAsBlobURL(core + "/ffmpeg-core.wasm", "application/wasm");
+button {
+  background: #1685ff;
+  color: white;
+  font-weight: bold;
+}
 
-    ffmpeg = new window.FFmpegWASM.FFmpeg();
-    ffmpeg.on("log", ({message}) => {
-      if (message) console.log("[FFmpeg]", message);
-    });
-    ffmpeg.on("progress", ({progress}) => {
-      if (Number.isFinite(progress)) {
-        el("status").textContent = "Muunnetaan ääntä... " + Math.round(progress * 100) + "%";
-      }
-    });
+button:disabled {
+  opacity: 0.5;
+}
 
-    el("status").textContent = "Käynnistetään FFmpeg...";
-    await ffmpeg.load({
-      classWorkerURL: workerURL,
-      coreURL,
-      wasmURL
-    });
-    return ffmpeg;
-  })();
+#status {
+  margin-top: 20px;
+  overflow-wrap: anywhere;
+  color: #ddd;
+}
+
+progress {
+  width: 100%;
+  margin-top: 15px;
+}
+
+.note {
+  color: #aaa;
+  font-size: 13px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>🎵 WAV → FSO-muunnin</h1>
+
+  <p>Valitse WAhV-äänitiedosto.</p>
+
+  <input type="file" id="file" accept=".wav,audio/wav">
+
+  <label for="format">Tulostiedoston pääte:</label>
+  <select id="format">
+    <option value="FSO">.FSO</option>
+    <option value="sfo">.sfo</option>
+  </select>
+
+  <button id="load">Käynnistä FFmpeg</button>
+  <button id="convert" disabled>Muunna tiedosto</button>
+
+  <progress id="progress" value="0" max="100"></progress>
+
+  <div id="status">FFmpeg ei ole vielä käynnissä.</div>
+
+  <p class="note">
+    FFmpeg ladataan CDN-palvelimelta.
+  </p>
+</div>
+
+<script type="module">
+import { FFmpeg } from
+  "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js";
+
+import {
+  fetchFile,
+  toBlobURL
+} from
+  "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/esm/index.js";
+
+const ffmpeg = new FFmpeg();
+
+const fileInput = document.getElementById("file");
+const loadButton = document.getElementById("load");
+const convertButton = document.getElementById("convert");
+const status = document.getElementById("status");
+const progress = document.getElementById("progress");
+
+let loaded = false;
+
+ffmpeg.on("log", ({ message }) => {
+  status.textContent = message;
+});
+
+ffmpeg.on("progress", ({ progress: value }) => {
+  progress.value = Math.round(value * 100);
+});
+
+loadButton.addEventListener("click", async () => {
+  if (loaded) return;
 
   try {
-    return await loading;
-  } catch (err) {
-    ffmpeg = null;
-    loading = null;
-    throw err;
+    loadButton.disabled = true;
+    status.textContent = "Ladataan FFmpeg-tiedostoja...";
+
+    const baseURL =
+      "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
+
+    await ffmpeg.load({
+      coreURL: await toBlobURL(
+        `${baseURL}/ffmpeg-core.js`,
+        "text/javascript"
+      ),
+      wasmURL: await toBlobURL(
+        `${baseURL}/ffmpeg-core.wasm`,
+        "application/wasm"
+      )
+    });
+
+    loaded = true;
+    convertButton.disabled = false;
+    status.textContent = "FFmpeg käynnistetty!";
+
+  } catch (error) {
+    status.textContent = "Virhe: " + error.message;
+    loadButton.disabled = false;
   }
-}
+});
 
-function crc32ogg(bytes) {
-  let c = 0;
-  for (let i = 0; i < bytes.length; i++) {
-    c = (c ^ (bytes[i] << 24)) >>> 0;
-    for (let j = 0; j < 8; j++) {
-      c = ((c & 0x80000000) ? ((c << 1) ^ 0x04c11db7) : (c << 1)) >>> 0;
-    }
-  }
-  return c >>> 0;
-}
+convertButton.addEventListener("click", async () => {
+  const file = fileInput.files[0];
 
-function oggToSfo(ogg) {
-  const out = new Uint8Array(ogg);
-  let pos = 0;
-  while (pos < out.length) {
-    if (pos + 27 > out.length ||
-        String.fromCharCode(...out.subarray(pos, pos + 4)) !== "OggS") {
-      throw new Error("OGG-sivun otsake on virheellinen kohdassa " + pos);
-    }
-    const segments = out[pos + 26];
-    const headEnd = pos + 27 + segments;
-    if (headEnd > out.length) throw new Error("OGG-segmenttitaulukko katkennut");
-    let payload = 0;
-    for (let j = pos + 27; j < headEnd; j++) payload += out[j];
-    const end = headEnd + payload;
-    if (end > out.length) throw new Error("OGG-data katkennut");
-
-    out.set([79, 83, 78, 68], pos);
-    for (let i = headEnd; i + 6 <= end; i++) {
-      if (out[i] === 118 && out[i+1] === 111 && out[i+2] === 114 &&
-          out[i+3] === 98 && out[i+4] === 105 && out[i+5] === 115) {
-        out.set([112, 109, 117, 115, 105, 99], i);
-        i += 5;
-      }
-    }
-    out.fill(0, pos + 22, pos + 26);
-    const checksum = crc32ogg(out.subarray(pos, end));
-    new DataView(out.buffer, out.byteOffset + pos + 22, 4).setUint32(0, checksum, true);
-    pos = end;
-  }
-  return out;
-}
-
-el("go").addEventListener("click", async () => {
-  const file = el("file").files[0];
   if (!file) {
-    el("status").textContent = "Valitse ensin WAV-tiedosto.";
+    status.textContent = "Valitse ensin WAV-tiedosto!";
     return;
   }
 
-  const button = el("go");
-  button.disabled = true;
-  let inputCreated = false;
-  let outputCreated = false;
+  if (!loaded) {
+    status.textContent = "Käynnistä ensin FFmpeg!";
+    return;
+  }
 
   try {
-    const engine = await loadFFmpeg();
-    el("status").textContent = "Luetaan WAV-tiedostoa...";
-    await engine.writeFile("input.wav", new Uint8Array(await file.arrayBuffer()));
-    inputCreated = true;
+    convertButton.disabled = true;
+    progress.value = 0;
+    status.textContent = "Muunnetaan...";
 
-    el("status").textContent = "Muunnetaan WAV OGG-muotoon...";
-    const code = await engine.exec([
-      "-i", "input.wav", "-vn", "-c:a", "libvorbis",
-      "-ar", "44100", "-ac", "2", "-f", "ogg", "output.ogg"
-    ]);
-    if (code !== 0) throw new Error("FFmpeg-muunnos epäonnistui (koodi " + code + ").");
-
-    const ogg = await engine.readFile("output.ogg");
-    outputCreated = true;
-    el("status").textContent = "Rakennetaan SFO-tiedostoa...";
-    const sfo = oggToSfo(ogg);
-    const downloadURL = URL.createObjectURL(
-      new Blob([sfo], {type:"application/octet-stream"})
+    await ffmpeg.writeFile(
+      "input.wav",
+      await fetchFile(file)
     );
+
+    // HUOM: Tämä tekee WAV-sisällöstä WAV-muotoisen
+    // tiedoston uudella päätteellä.
+    const format = document.getElementById("format").value;
+
+    await ffmpeg.exec([
+      "-i", "input.wav",
+      "-c:a", "pcm_s16le",
+      "-f", "wav",
+      "output.wav"
+    ]);
+
+    const data = await ffmpeg.readFile("output.wav");
+
+    const blob = new Blob([data], {
+      type: "audio/wav"
+    });
+
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = downloadURL;
-    a.download = file.name.replace(/\.wav$/i, "") + ".sfo";
-    document.body.appendChild(a);
+
+    a.href = url;
+    a.download = "converted." + format;
     a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(downloadURL), 60000);
-    el("status").textContent = "Valmis! Ladattu " + sfo.length + " tavua. Peliyhteensopivuutta ei ole varmistettu.";
-  } catch (err) {
-    console.error(err);
-    el("status").textContent = "Virhe: " + (err && err.message ? err.message : String(err));
+
+    URL.revokeObjectURL(url);
+
+    status.textContent =
+      "Valmis! Tiedosto ladattu.";
+
+  } catch (error) {
+    status.textContent = "Virhe: " + error.message;
   } finally {
-    if (ffmpeg && ffmpeg.loaded) {
-      try { if (inputCreated) await ffmpeg.deleteFile("input.wav"); } catch (_) {}
-      try { if (outputCreated) await ffmpeg.deleteFile("output.ogg"); } catch (_) {}
-    }
-    button.disabled = false;
+    convertButton.disabled = false;
   }
 });
-
-window.addEventListener("beforeunload", () => {
-  for (const url of objectURLs) URL.revokeObjectURL(url);
-});
 </script>
+
 </body>
 </html>
