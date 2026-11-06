@@ -3,13 +3,11 @@
 <html lang="fi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>WAV → FSO-muunnin</title>
 
 <style>
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -18,30 +16,28 @@ body {
   color: white;
   font-family: Arial, sans-serif;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   padding: 20px;
 }
 
 .container {
   width: 100%;
-  max-width: 450px;
+  max-width: 440px;
   background: #222;
-  padding: 25px;
   border-radius: 16px;
+  padding: 25px;
   text-align: center;
 }
 
-h1 {
-  font-size: 25px;
-}
+h1 { font-size: 25px; }
 
 input, select, button {
   width: 100%;
-  padding: 13px;
+  padding: 14px;
   margin-top: 15px;
+  border: 0;
   border-radius: 8px;
-  border: none;
   font-size: 16px;
 }
 
@@ -52,13 +48,12 @@ button {
 }
 
 button:disabled {
-  opacity: 0.5;
+  opacity: .5;
 }
 
 #status {
   margin-top: 20px;
   overflow-wrap: anywhere;
-  color: #ddd;
 }
 
 progress {
@@ -66,9 +61,8 @@ progress {
   margin-top: 15px;
 }
 
-.note {
+small {
   color: #aaa;
-  font-size: 13px;
 }
 </style>
 </head>
@@ -76,90 +70,135 @@ progress {
 <body>
 
 <div class="container">
-  <h1>🎵 WAV → FSO-muunnin</h1>
 
-  <p>Valitse WAhV-äänitiedosto.</p>
+<h1>🎵 WAV → FSO-muunnin</h1>
 
-  <input type="file" id="file" accept=".wav,audio/wav">
+<p>Valitse WAV-tiedosto.</p>
 
-  <label for="format">Tulostiedoston pääte:</label>
-  <select id="format">
-    <option value="FSO">.FSO</option>
-    <option value="sfo">.sfo</option>
-  </select>
+<input type="file" id="file" accept=".wav,audio/wav">
 
-  <button id="load">Käynnistä FFmpeg</button>
-  <button id="convert" disabled>Muunna tiedosto</button>
+<select id="format">
+  <option value="FSO">FSO</option>
+  <option value="sfo">SFO</option>
+</select>
 
-  <progress id="progress" value="0" max="100"></progress>
+<button id="start">Käynnistä FFmpeg</button>
 
-  <div id="status">FFmpeg ei ole vielä käynnissä.</div>
+<button id="convert" disabled>
+  Muunna tiedosto
+</button>
 
-  <p class="note">
-    FFmpeg ladataan CDN-palvelimelta.
-  </p>
+<progress id="progress" value="0" max="100"></progress>
+
+<div id="status">Valmis käynnistettäväksi.</div>
+
+<br>
+<small>FFmpeg 0.12.10</small>
+
 </div>
 
 <script type="module">
+
 import { FFmpeg } from
-  "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js";
+"https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js";
 
 import {
   fetchFile,
   toBlobURL
 } from
-  "https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/esm/index.js";
+"https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.2/dist/esm/index.js";
 
 const ffmpeg = new FFmpeg();
 
-const fileInput = document.getElementById("file");
-const loadButton = document.getElementById("load");
+const startButton = document.getElementById("start");
 const convertButton = document.getElementById("convert");
+const fileInput = document.getElementById("file");
 const status = document.getElementById("status");
 const progress = document.getElementById("progress");
 
 let loaded = false;
+let busy = false;
 
 ffmpeg.on("log", ({ message }) => {
-  status.textContent = message;
+  console.log(message);
 });
 
 ffmpeg.on("progress", ({ progress: value }) => {
   progress.value = Math.round(value * 100);
 });
 
-loadButton.addEventListener("click", async () => {
-  if (loaded) return;
+startButton.onclick = async () => {
+
+  if (loaded || busy) return;
+
+  busy = true;
+  startButton.disabled = true;
+  status.textContent = "Ladataan FFmpeg...";
+
+  let workerBlobURL;
 
   try {
-    loadButton.disabled = true;
-    status.textContent = "Ladataan FFmpeg-tiedostoja...";
 
-    const baseURL =
+    const ffmpegURL =
+      "https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm";
+
+    const coreURL =
       "https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd";
 
+    // Lataa FFmpeg Worker Blob-osoitteeksi.
+    const workerResponse = await fetch(
+      ffmpegURL + "/worker.js"
+    );
+
+    if (!workerResponse.ok) {
+      throw new Error("Worker.js lataus epäonnistui");
+    }
+
+    const workerCode = await workerResponse.text();
+
+    workerBlobURL = URL.createObjectURL(
+      new Blob([workerCode], {
+        type: "text/javascript"
+      })
+    );
+
+    status.textContent = "Käynnistetään FFmpeg...";
+
     await ffmpeg.load({
+      classWorkerURL: workerBlobURL,
+
       coreURL: await toBlobURL(
-        `${baseURL}/ffmpeg-core.js`,
+        coreURL + "/ffmpeg-core.js",
         "text/javascript"
       ),
+
       wasmURL: await toBlobURL(
-        `${baseURL}/ffmpeg-core.wasm`,
+        coreURL + "/ffmpeg-core.wasm",
         "application/wasm"
       )
     });
 
     loaded = true;
     convertButton.disabled = false;
-    status.textContent = "FFmpeg käynnistetty!";
+
+    status.textContent = "FFmpeg käynnissä!";
 
   } catch (error) {
-    status.textContent = "Virhe: " + error.message;
-    loadButton.disabled = false;
-  }
-});
 
-convertButton.addEventListener("click", async () => {
+    status.textContent =
+      "Virhe: " + error.message;
+
+    startButton.disabled = false;
+
+  } finally {
+    busy = false;
+  }
+};
+
+convertButton.onclick = async () => {
+
+  if (busy) return;
+
   const file = fileInput.files[0];
 
   if (!file) {
@@ -172,19 +211,20 @@ convertButton.addEventListener("click", async () => {
     return;
   }
 
+  busy = true;
+  convertButton.disabled = true;
+  progress.value = 0;
+
   try {
-    convertButton.disabled = true;
-    progress.value = 0;
-    status.textContent = "Muunnetaan...";
+
+    status.textContent = "Ladataan WAV-tiedostoa...";
 
     await ffmpeg.writeFile(
       "input.wav",
       await fetchFile(file)
     );
 
-    // HUOM: Tämä tekee WAV-sisällöstä WAV-muotoisen
-    // tiedoston uudella päätteellä.
-    const format = document.getElementById("format").value;
+    status.textContent = "Muunnetaan...";
 
     await ffmpeg.exec([
       "-i", "input.wav",
@@ -200,23 +240,36 @@ convertButton.addEventListener("click", async () => {
     });
 
     const url = URL.createObjectURL(blob);
+
+    const extension =
+      document.getElementById("format").value;
+
     const a = document.createElement("a");
 
     a.href = url;
-    a.download = "converted." + format;
+    a.download = "converted." + extension;
+
+    document.body.appendChild(a);
     a.click();
+    a.remove();
 
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-    status.textContent =
-      "Valmis! Tiedosto ladattu.";
+    status.textContent = "Valmis! Tiedosto ladattu.";
 
   } catch (error) {
-    status.textContent = "Virhe: " + error.message;
+
+    status.textContent =
+      "Virhe: " + error.message;
+
   } finally {
+
+    busy = false;
     convertButton.disabled = false;
+
   }
-});
+};
+
 </script>
 
 </body>
