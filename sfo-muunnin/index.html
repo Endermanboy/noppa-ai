@@ -19,7 +19,7 @@ small{color:#c7d9df}
 <body>
 <main>
 <h1>🎣 WAV → SFO</h1>
-<p>Valitse WAV-ääni ja kokeile muuntaa se Pro Pilkki 2:n SFO-muotoon.</p>
+<p>Valitse WAV-ääni ja kokeile muunpotaa se Pro Pilkki 2:n SFO-muotoon.</p>
 <input type="file" id="file" accept=".wav,audio/wav,audio/x-wav">
 <button id="go">Muunna SFO:ksi</button>
 <p id="status" role="status">Valitse tiedosto.</p>
@@ -42,7 +42,6 @@ async function loadFFmpeg(){
   loadingPromise=(async()=>{
     if(!window.FFmpegWASM?.FFmpeg)throw new Error("ffmpeg.js ei latautunut. Tarkista tiedoston nimi ja sijainti.");
     el("status").textContent="Tarkistetaan FFmpeg-tiedostoja GitHubista...";
-    const workerURL=url("814.ffmpeg.js");
     const coreURL=url("ffmpeg-core.js");
     const wasmURL=url("ffmpeg-core.wasm");
     await checkFile("814.ffmpeg.js");
@@ -54,7 +53,7 @@ async function loadFFmpeg(){
       if(Number.isFinite(progress))el("status").textContent="Muunnetaan ääntä... "+Math.round(progress*100)+"%";
     });
     el("status").textContent="Käynnistetään FFmpeg...";
-    await ffmpeg.load({classWorkerURL:workerURL,coreURL,wasmURL});
+    await ffmpeg.load({coreURL,wasmURL});
     return ffmpeg;
   })();
   try{return await loadingPromise;}
