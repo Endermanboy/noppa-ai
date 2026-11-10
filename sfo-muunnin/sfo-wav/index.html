@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SFO → WAV -muunnin</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;background:#11232c;color:#fff;font:16px Arial,sans-serif;padding:16px}
+main{width:min(460px,92vw);padding:25px;border-radius:18px;background:#23404c}
+input,button{width:100%;margin:12px 0}
+input{padding:10px;background:#fff;color:#111;border-radius:8px}
+button{padding:14px;background:#8ae6b3;color:#102a22;border:0;border-radius:10px;font-weight:bold;font-size:16px;cursor:pointer}
+button:disabled{opacity:.5;cursor:wait}
+#status{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.45}
+small{color:#c7d9df;line-height:1.4;display:block}
+</style>
+<script src="./ffmpeg.js"></script>
+</head>
+<body>
+<main>
+<h1>🔊 SFO → WAV</h1>
+<p>Valitse SFO-tiedosto ja muunna se WAV-äänitiedostoksi.</p>
+<input type="file" id="file" accept=".sfo,application/octet-stream">
+<button id="go">Muunna WAV:ksi</button>
+<p id="status" role="status">Valitse SFO-tiedosto.</p>
+<small>
+Tämä versio tunnistaa tämän saman muuntimen tekemän SFO-muodon (OGG/Vorbis-data, jonka sivuotsakkeet on muutettu).
+Se ei välttämättä osaa purkaa kaikkia Pro Pilkki 2:n alkuperäisiä SFO-tiedostoja.
+FFmpeg-tiedostojen (ffmpeg.js, 814.ffmpeg.js, ffmpeg-core.js ja ffmpeg-core.wasm) pitää olla tässä samassa kansiossa.
+</small>
+</main>
+
+<script>
+"use strict";
+
+const el = id => document.getElementById(id);
+let ffmpeg = null;
+let loadingPromise = null;
+
+function assetURL(name) {
+  return new URL("./" + name, window.location.href).href;
+}
+
+async function checkFile(name) {
+  const response = await fetch(assetURL(name), {cache:"no-store"});
+  if (!response.ok) {
+    throw new Error(name + " ei lataudu (HTTP " + response.status + ").");
+  }
+}
+
+async function loadFFmpeg() {
+  if (ffmpeg && ffmpeg.loaded) return ffmpeg;
+  if (loadingPromise) return loadingPromise;
+
+  loadingPromise = (async () => {
+    if (!window.FFmpegWASM || !window.FFmpegWASM.FFmpeg) {
+      throw new Error("ffmpeg.js ei latautunut. Tarkista, että se on samassa kansiossa kuin index.html.");
+    }
+
+    el("status").textContent = "Tarkistetaan FFmpeg-tiedostoja...";
+    await checkFile("814.ffmpeg.js");
+    await checkFile("ffmpeg-core.js");
+    await checkFile("ffmpeg-core.wasm");
+
+    ffmpeg = new window.FFmpegWASM.FFmpeg();
+    ffmpeg.on("log", ({message}) => { if (message) console.log("[FFmpeg]", message); });
+    ffmpeg.on("progress", ({progress}) => {
+      if (Number.isFinite(progress)) {
+        el("status").textContent = "Muunnetaan WAV:ksi... " + Math.round(progress * 100) + "%";
+      }
+    });
+
+    el("status").textContent = "Käynnistetään FFmpeg...";
+    // Käytetään samaa toimivaa lataustapaa kuin WAV → SFO -muuntimessa.
+    await ffmpeg.load({
+      coreURL: assetURL("ffmpeg-core.js"),
+      wasmURL: assetURL("ffmpeg-core.wasm")
+    });
+    return ffmpeg;
+  })();
+
+  try {
+    return await loadingPromise;
+  } catch (error) {
+    if (ffmpeg) { try { ffmpeg.terminate(); } catch (_) {} }
+    ffmpeg = null;
+    loadingPromise = null;
+    throw error;
+  }
+}
+
+// Ogg-sivujen CRC käyttää Oggin CRC-32-polynomia.
+function oggCRC32(bytes) {
+  let crc = 0;
+  for (let i = 0; i < bytes.length; i++) {
+    crc = (crc ^ (bytes[i] << 24)) >>> 0;
+    for (let j = 0; j < 8; j++) {
+      crc = ((crc & 0x80000000) ? ((crc << 1) ^ 0x04c11db7) : (crc << 1)) >>> 0;
+    }
+  }
+  return crc >>> 0;
+}
+
+function replaceBytes(data, from, to) {
+  let replacements = 0;
+  for (let i = 0; i <= data.length - from.length; i++) {
+    let match = true;
+    for (let j = 0; j < from.length; j++) {
+      if (data[i+j] !== from[j]) { match = false; break; }
+    }
+    if (match) {
+      data.set(to, i);
+      i += from.length - 1;
+      replacements++;
+    }
+  }
+  return replacements;
+}
+
+function sfoToOgg(inputBuffer) {
+  const data = new Uint8Array(inputBuffer.slice(0));
+  const signature = [79, 83, 78, 68]; // OSND
+  const oggSignature = [79, 103, 103, 83]; // OggS
+  const customVorbis = [112, 109, 117, 115, 105, 99]; // pmusic
+  const vorbis = [118, 111, 114, 98, 105, 115];
+
+  let position = 0;
+  let pages = 0;
+
+  while (position < data.length) {
+    if (position + 27 > data.length) {
+      throw new Error("Tiedosto päättyy kesken OGG-sivun otsakkeen.");
+    }
+
+    for (let i = 0; i < 4; i++) {
+      if (data[position+i] !== signature[i]) {
+        throw new Error("Tiedoston tunniste ei vastaa tämän muuntimen SFO-muotoa. Tämä ei ehkä ole tällä muuntimella tehty SFO.");
+      }
+    }
+
+    const segmentCount = data[position + 26];
+    const headerEnd = position + 27 + segmentCount;
+    if (headerEnd > data.length) throw new Error("SFO-tiedoston sivutaulukko on virheellinen.");
+
+    let payloadLength = 0;
+    for (let i = position + 27; i < headerEnd; i++) payloadLength += data[i];
+
+    const pageEnd = headerEnd + payloadLength;
+    if (pageEnd > data.length) throw new Error("SFO-tiedoston sivudata on katkennut.");
+
+    data.set(oggSignature, position);
+    replaceBytes(data.subarray(headerEnd, pageEnd), customVorbis, vorbis);
+
+    // Nollaa CRC-kenttä ja laske alkuperäinen OGG-sivun tarkistussumma uudelleen.
+    data.fill(0, position + 22, position + 26);
+    const crc = oggCRC32(data.subarray(position, pageEnd));
+    new DataView(data.buffer, data.byteOffset + position + 22, 4).setUint32(0, crc, true);
+
+    position = pageEnd;
+    pages++;
+  }
+
+  if (pages === 0) throw new Error("SFO-tiedostosta ei löytynyt äänidataa.");
+  return data;
+}
+
+el("go").addEventListener("click", async () => {
+  const file = el("file").files[0];
+  if (!file) { el("status").textContent = "Valitse ensin SFO-tiedosto."; return; }
+
+  const button = el("go");
+  button.disabled = true;
+  let inputCreated = false;
+  let outputCreated = false;
+
+  try {
+    el("status").textContent = "Luetaan SFO-tiedostoa...";
+    const ogg = sfoToOgg(await file.arrayBuffer());
+
+    const engine = await loadFFmpeg();
+    await engine.writeFile("input.ogg", ogg);
+    inputCreated = true;
+
+    el("status").textContent = "Muunnetaan WAV-muotoon...";
+    const exitCode = await engine.exec([
+      "-i", "input.ogg",
+      "-vn",
+      "-c:a", "pcm_s16le",
+      "-ar", "44100",
+      "-ac", "2",
+      "output.wav"
+    ]);
+
+    if (exitCode !== 0) throw new Error("FFmpeg-muunnos epäonnistui (koodi " + exitCode + ").");
+
+    const wav = await engine.readFile("output.wav");
+    outputCreated = true;
+    const url = URL.createObjectURL(new Blob([wav], {type:"audio/wav"}));
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = file.name.replace(/\.sfo$/i, "") + ".wav";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+
+    el("status").textContent = "Valmis! WAV-tiedosto ladattiin (" + wav.length + " tavua).";
+  } catch (error) {
+    console.error(error);
+    el("status").textContent = "Virhe: " + (error && error.message ? error.message : String(error));
+  } finally {
+    if (ffmpeg && ffmpeg.loaded) {
+      try { if (inputCreated) await ffmpeg.deleteFile("input.ogg"); } catch (_) {}
+      try { if (outputCreated) await ffmpeg.deleteFile("output.wav"); } catch (_) {}
+    }
+    button.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
