@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WAV → SFO</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#11232c;color:#fff;font:16px Arial,sans-serif;padding:18px}main{width:min(480px,100%);padding:24px;border-radius:18px;background:#23404c}input,button{width:100%;margin:12px 0;padding:13px}button{background:#8ae6b3;color:#102a22;border:0;border-radius:10px;font-weight:bold;font-size:16px}button:disabled{opacity:.5}#status{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}small{color:#c7d9df;line-height:1.5}
+</style>
+<script src="./ffmpeg.js"></script>
+</head>
+<body><main>
+<h1>🎣 WAV → SFO</h1>
+<p>Valitse WAV-tiedosto ja muperkeleunna se kokeelliseksi Pro Pilkki 2 SFO -tiedostoksi.</p>
+<input type="file" id="file" accept=".wav,audio/wav,audio/x-wav">
+<button id="go">Muunna SFO:ksi</button>
+<p id="status" role="status">Valitse WAV-tiedosto.</p>
+<small>Tämä versio käyttää 44,1 kHz:n stereoääntä, poistaa WAV:n metatiedot ja tarkistaa Ogg-sivujen rajat sekä CRC-tarkistukset. Alkuperäisen SFO:n koko sisäinen formaatti ei ole vielä täysin selvillä, joten peliyhteensopivuus pitää testata kopiolla.</small>
+</main>
+<script>
+"use strict";
+const el=id=>document.getElementById(id);
+let ffmpeg=null,loadingPromise=null;
+const url=name=>new URL("./"+name,location.href).href;
+async function checkFile(name){const r=await fetch(url(name),{cache:"no-store"});if(!r.ok)throw new Error(name+" ei lataudu GitHubista (HTTP "+r.status+").");}
+async function loadFFmpeg(){
+ if(ffmpeg?.loaded)return ffmpeg;if(loadingPromise)return loadingPromise;
+ loadingPromise=(async()=>{
+  if(!window.FFmpegWASM?.FFmpeg)throw new Error("ffmpeg.js ei latautunut. Tarkista tiedoston nimi ja sijainti.");
+  el("status").textContent="Tarkistetaan FFmpeg-tiedostoja...";
+  await checkFile("814.ffmpeg.js");await checkFile("ffmpeg-core.js");await checkFile("ffmpeg-core.wasm");
+  ffmpeg=new FFmpegWASM.FFmpeg();
+  ffmpeg.on("progress",({progress})=>{if(Number.isFinite(progress))el("status").textContent="Muunnetaan ääntä... "+Math.round(progress*100)+"%";});
+  await ffmpeg.load({coreURL:url("ffmpeg-core.js"),wasmURL:url("ffmpeg-core.wasm")});return ffmpeg;
+ })();try{return await loadingPromise;}catch(e){ffmpeg=null;loadingPromise=null;throw e;}
+}
+function oggCRC(data){let c=0;for(let i=0;i<data.length;i++){c=(c^(data[i]<<24))>>>0;for(let j=0;j<8;j++)c=((c&0x80000000)?((c<<1)^0x04c11db7):(c<<1))>>>0;}return c>>>0;}
+function oggToSfo(input){
+ const out=new Uint8Array(input);let p=0,pages=0;
+ while(p<out.length){
+  if(p+27>out.length||out[p]!==79||out[p+1]!==103||out[p+2]!==103||out[p+3]!==83)throw new Error("Virheellinen Ogg-sivu kohdassa "+p);
+  const n=out[p+26],table=p+27,endTable=table+n;if(endTable>out.length)throw new Error("Ogg-sivun taulukko on katkennut");
+  let payload=0;for(let i=table;i<endTable;i++)payload+=out[i];const end=endTable+payload;if(end>out.length)throw new Error("Ogg-sivun data on katkennut");
+  out.set([79,83,78,68],p);out.fill(0,p+22,p+26);const crc=oggCRC(out.subarray(p,end));new DataView(out.buffer,out.byteOffset+p,4).setUint32(22,crc,true);
+  p=end;pages++;
+ }
+ if(p!==out.length||pages<3)throw new Error("Ogg/Vorbis-virran tarkistus epäonnistui.");
+ return {data:out,pages};
+}
+el("go").addEventListener("click",async()=>{
+ const file=el("file").files[0];if(!file){el("status").textContent="Valitse ensin WAV-tiedosto.";return;}
+ const btn=el("go");btn.disabled=true;let madeIn=false,madeOut=false;
+ try{
+  const f=await loadFFmpeg();el("status").textContent="Ladataan WAV...";
+  await f.writeFile("input.wav",new Uint8Array(await file.arrayBuffer()));madeIn=true;
+  el("status").textContent="Muunnetaan Vorbis-ääneksi...";
+  const code=await f.exec(["-y","-i","input.wav","-map_metadata","-1","-vn","-ar","44100","-ac","2","-c:a","libvorbis","-q:a","4","-metadata","encoder=","-f","ogg","output.ogg"]);
+  if(code!==0)throw new Error("FFmpeg-muunnos epäonnistui (koodi "+code+").");
+  const raw=await f.readFile("output.ogg");madeOut=true;
+  el("status").textContent="Tarkistetaan ja rakennetaan SFO...";
+  const result=oggToSfo(raw);
+  const blob=new Blob([result.data],{type:"application/octet-stream"}),downloadURL=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=downloadURL;a.download=file.name.replace(/\.wav$/i,"")+".sfo";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(downloadURL),60000);
+  el("status").textContent="Valmis!\nTiedosto: "+a.download+"\nKoko: "+result.data.length+" tavua\nOgg-sivuja: "+result.pages+"\n\nHuomaa: tämä tarkistaa tiedoston teknisen rakenteen, ei vielä todista että peli hyväksyy sen. Testaa varmuuskopiolla.";
+ }catch(e){console.error(e);el("status").textContent="Virhe: "+(e?.message||String(e));}
+ finally{if(ffmpeg?.loaded){try{if(madeIn)await ffmpeg.deleteFile("input.wav");}catch(_){}try{if(madeOut)await ffmpeg.deleteFile("output.ogg");}catch(_){}}btn.disabled=false;}
+});
+</script></body></html>
